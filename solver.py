@@ -10,7 +10,6 @@ def pad(x, n):
     return [None for i in range(n - len(x))] + x
 
 
-@dataclass
 class Solver():
 
     def __init__(self, init_dict):
@@ -170,7 +169,7 @@ class Solver():
 
         
     #Take two constraints and unify them given a variable
-    def unify_cons(self, i, j, x, return_cons = False):
+    def unify_cons(self, i, j, x, return_cons=False):
         if i not in range(len(self.cons)) or j not in range(len(self.cons)) or x not in range(len(self.legend) - 1):
             return False
         elif self.cons[i][x] == 0 or self.cons[j][x] == 0:
@@ -189,7 +188,9 @@ class Solver():
                 return True
             
     # Take a constraint and a variable and restrict possible values for that variable
-    def find_poss(self, i, x, max_variables = 2, max_values = 10, max_remaining = 2):
+    def find_poss(self, i, x, max_variables=2, max_values=10, max_remaining=4):
+        if x in self.legend:
+            x = self.legend.index(x)
         if i not in range(len(self.cons)) or x not in range(len(self.legend)):
             self.error = 'Invalid constraint or variable'
             return False
@@ -242,7 +243,7 @@ class Solver():
                 return True
     
     # Restrict possibilities for all variables based on single constraints
-    def find_poss_all(self, round = 1):
+    def find_poss_all(self, round=1):
         max_variables, max_values, max_remaining = self.scheduler(round)
         last = self.poss.copy()
         for i, cons in enumerate(self.cons):
@@ -271,7 +272,7 @@ class Solver():
         return 4
     
     # Generate unifications of constraints
-    def generate_unifications(self, rounds = 1):
+    def generate_unifications(self, rounds=1):
         old_cons_num = 0
         for r in range(rounds):
             for i in range(len(self.cons)):
@@ -381,9 +382,6 @@ class Solver():
         [(self.legend[i] if self.solved[i] == None else self.solved[i]) if i!= None else '' for i in self.str3]]
 
         return result + tabulate(table)
-
-
-
 
 
 class Solver_backtrack():

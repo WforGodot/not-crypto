@@ -15,11 +15,17 @@ Converting to natural language using GPT-3.5?
 
 Should we sample?
 
-Error correcting codes
- - Direct Shannon-coding
- - Semantic Error-correction
 
 
 RL?
 
 
+
+___________________
+
+End-to-end testing (GPT-4o)
+
+Test with solver:
+Llama?
+Llama with RLHF
+RL algorithms (PPO, DQN, etc.)

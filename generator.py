@@ -93,6 +93,8 @@ def find_alphametic(numbers: List[int], word_dict: Dict[str, List[str]]) -> Tupl
     answer_format = ' + '.join(str_numbers) + ' = ' + str(total)
 
     return question_format, answer_format
+
+
 def main():
     # Load words
     common_words = load_words('common_words.txt')
@@ -107,7 +109,7 @@ def main():
     #duplit_dict = prepare_word_dictionaries(words, 7, duplit=True)
 
     # Example usage: Generate alphametics
-    lengths = [3, 3]  # Lengths of numbers in the alphametic puzzle
+    lengths = [2, 3]  # Lengths of numbers in the alphametic puzzle
     alphametics = get_alphametics(lengths)
 
     results = []  # To store both questions and answers in desired format
@@ -115,11 +117,12 @@ def main():
     # Process each generated alphametic to find those with valid word encodings
     for numbers in alphametics:
         question_format, answer_format = find_alphametic(numbers, common_word_dict)
+        
         if question_format and answer_format:  # Only include if both questions and answers are non-empty
             if '?' not in question_format and '?' not in answer_format:
                 results.append({"Question": question_format, "Answer": answer_format})
 
-    # Optionally, save results or further processing
+    # Save results to a JSON file
     with open('output.json', 'w') as f:
         json.dump(results, f, indent=4)
 

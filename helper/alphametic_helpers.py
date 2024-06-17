@@ -52,6 +52,7 @@ def categorize_by_function(items: List[Any], func: Any) -> Dict[str, List[Any]]:
 
 
 def find_letters(numbers: List[str], current_mapping: Dict[str, str], word_dict: Dict[str, List[str]]) -> Tuple[Dict[str, str], bool]:
+
     if not numbers:
         return current_mapping, True  # Base case: all numbers processed successfully
 
@@ -61,8 +62,8 @@ def find_letters(numbers: List[str], current_mapping: Dict[str, str], word_dict:
             updated_mapping = match_number_to_word(numbers[0], word, current_mapping)
             if updated_mapping:
                 # If this is the last number, return the mapping immediately
-                if len(numbers) == 1:
-                    return updated_mapping, True
+                #if len(numbers) == 1:
+                    #return updated_mapping, True
                 # Recurse with the rest of the numbers
                 subsequent_mapping, perfect_match = find_letters(numbers[1:], updated_mapping, word_dict)
                 if perfect_match:
@@ -70,7 +71,7 @@ def find_letters(numbers: List[str], current_mapping: Dict[str, str], word_dict:
 
     # If no valid mappings were found for this number, and there are more numbers to try, continue with the next one
     if len(numbers) > 1:
-        return find_letters(numbers[1:], current_mapping, word_dict)
+        return find_letters(numbers[1:], current_mapping, word_dict)[0], False
 
     return {}, False  # No valid mappings found and no numbers left to skip
 
