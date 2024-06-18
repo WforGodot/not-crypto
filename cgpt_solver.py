@@ -5,8 +5,8 @@ from solver import SolverNL  # Import the SolverNL class
 from openai import OpenAI
 
 
-MODEL_NAME = "gpt-3.5-turbo"
-PROBLEM = "WE + NOW = EVEN"
+MODEL_NAME = "gpt-4o"
+PROBLEM = "EVEN + HERE = TENT"
 
 
 # Load API key from environment variables
