@@ -97,8 +97,8 @@ def find_alphametic(numbers: List[int], word_dict: Dict[str, List[str]]) -> Tupl
 
 def main():
     # Load words
-    common_words = load_words('common_words.txt')
-    all_words = load_words('wordlist.txt')
+    common_words = load_words('wordlist/common_words.txt')
+    all_words = load_words('wordlist/wordlist.txt')
     
     # Generate extended word list
     words = generate_extended_word_list(common_words, all_words)

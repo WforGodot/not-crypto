@@ -37,9 +37,9 @@ def ask_llm_for_instructions(solver_state):
 
             [
                 "backtrack",
-                "find_poss 0 C2",
-                "unify_cons 1 2 T",
-                "make_assumption E 5"
+                "find 0 C2",
+                "unify 1 2 T",
+                "assume E 5"
             ]
 
             
@@ -52,34 +52,41 @@ def ask_llm_for_instructions(solver_state):
             An example of a log of a successful solve is:
 
             Constraints:
-                0: - 1D + 1O + 1C1 = 0
-                1: + 2D - 1O - 10C1 + 1C2 = 0
-                2: + 1D + 1O - 1G - 10C2 = 0
-                Possibilities:
-                D: [1, 2, 3, 4, 5, 6, 7, 8, 9]
-                O: [1, 2, 3, 4, 5, 6, 7, 8, 9]
-                G: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-                C1: [0, 1]
-                C2: [0, 1]
-                Assumptions:
-                -  -  -
-                _  _
-                D  O
-                O  D  D
-                -  -  -
-                D  O  G
-                -  -  -
+            0: + 1E + 1H - 1T + 1C1 = 0
+            1: + 1V - 10C1 + 1C2 = 0
+            2: + 1E - 1N + 1R - 10C2 + 1C3 = 0
+            3: + 1E + 1N - 1T - 10C3 = 0
+            Possibilities:
+            E: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+            V: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+            N: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+            H: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+            R: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+            T: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+            C1: [0, 1]
+            C2: [0, 1]
+            C3: [0, 1]
+            Assumptions:
+            -  -  -  -
+            _  _  _
+            E  V  E  N
+            H  E  R  E
+            -  -  -  -
+            T  E  N  T
+            -  -  -  -
 
-            Executed: find_poss 0 C1 - Success
-            Executed: unify_cons 0 1 D - Success
-            Executed: find_poss 3 O - Success
-            Executed: find_poss 1 D - Success
-            Assumed D = 7
-            Executed: make_assumption D 7 - Success
-            Backtracked on assumption D = 7
-            Executed: backtrack - Success
-            Assumed D = 8
-            Executed: make_assumption D 8 - Success
+            Executed: find 2 C2 - Success
+            Executed: find 1 C2 - Success
+            Executed: find 3 C3 - Success
+            Executed: unify 0 3 E - Success
+            Executed: unify 4 C3 - Error: unify_cons requires 3 arguments
+            Executed: find 4 C3 - Success
+            Executed: unification 2 3 E - Error: Unknown command
+            Executed: unify 2 3 E - Success
+            Assumed N = 2
+            Executed: Z - Success
+            Problem Solved!
+
             """}
         ]
     )

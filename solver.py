@@ -42,7 +42,6 @@ class Solver():
         str3 = [legend.index(i) for i in str_3]
         carry = [legend.index(i) for i in carry] + [None]
         cons = []
-        print(str1, str2, str3, carry, legend)
         for i in range(len(str3)):
             x = [0 for i in range(len(legend)+ 1)]
             if str1[i] != None:
@@ -202,7 +201,7 @@ class Solver():
                 return True
             
     # Take a constraint and a variable and restrict possible values for that variable
-    def find_poss(self, i, x, max_variables=3, max_values=100, max_remaining=10, max_starting=3):
+    def find_poss(self, i, x, max_variables=3, max_values=30, max_remaining=10, max_starting=3):
         if x in self.legend:
             x = self.legend.index(x)
         if i not in range(len(self.cons)) or x not in range(len(self.legend)):
@@ -228,14 +227,42 @@ class Solver():
                     self.log += f'Solved {self.legend[x]} to {x_value}\n'
                     self.solve(x, x_value)
                     return True
-            elif len(other_variables) == 1 or (len(other_variables) <= max_variables and num_possibilities <= max_values):
+
+            for k in other_variables:
+                if not self.poss[k]:
+                    self.error = 'No possible value for variable'
+                    return False
+
+            # Boundary conditions (Find min and max possible values based on min and max values of other variables)
+            min_value = -((integer + sum([max(map(lambda val: self.cons[i][k] * val, self.poss[k])) for k in other_variables])) // z)
+            max_value = -((integer + sum([min(map(lambda val: self.cons[i][k] * val, self.poss[k])) for k in other_variables])) // z)
+
+            # Adjust for the sign of z
+            if z < 0:
+                min_value, max_value = max_value, min_value
+
+            if min_value > max_value:
+                self.error = 'No possible value for variable'
+                return False
+
+            # Restrict possible values for x within the calculated range
+            self.poss[x] = [val for val in self.poss[x] if min_value <= val <= max_value]
+
+            # Ensure that poss[x] is not empty
+            if not self.poss[x]:
+                self.error = 'No possible value for variable'
+                return False
+
+            if len(other_variables) == 1 or (len(other_variables) <= max_variables and num_possibilities <= max_values):
                 poss = []
                 for perm in itertools.product(*[self.poss[k] for k in other_variables]):
                     if len(list(set(perm[:ov_unique]))) == len(list(perm[:ov_unique])):
                         y = -1*int((integer + sum([coeff[k]*perm[k] for k in range(len(coeff))])))
                         if y % z == 0:
                             if int(y/z) in self.poss[x]:
-                                poss.append(int(y/z))
+                                if not int(y/z) in perm[:ov_unique]:
+                                    poss.append(int(y/z))
+
                 poss = list(set(poss))
                 if len(poss) == 0:
                     self.poss[x] = []
@@ -255,9 +282,9 @@ class Solver():
                     return True
             else:
                 return True
-    
+
     # Restrict possibilities for all variables based on single constraints
-    def find_poss_all(self, round=1):
+    def find_poss_all(self, round=1, hacks=False):
         max_variables, max_values, max_remaining = self.scheduler(round)
         last = self.poss.copy()
         for i, cons in enumerate(self.cons):
@@ -269,22 +296,25 @@ class Solver():
         self.check_for_solved()
         if last != self.poss:
             self.find_poss_all()
-        elif round < self.max_rounds():
+        elif round < self.max_rounds(hacks):
             self.find_poss_all(round + 1)
         return True
-    
+
     def scheduler(self, rounds=1):
         if rounds == 1:
             return (1, 10, 10)
         elif rounds == 2:
-            return (2, 10, 1)
+            return (2, 20, 1)
         elif rounds == 3:
-            return (2, 10, 5)
+            return (2, 20, 5)
         elif rounds == 4:
-            return (2, 30, 1)
-    
-    def max_rounds(self):
-        return 1
+            return (2, 100, 10)
+
+    def max_rounds(self, hacks):
+        if hacks:
+            return 4
+        else:
+            return 1
     
     # Generate unifications of constraints
     def generate_unifications(self, rounds=1):
@@ -296,7 +326,7 @@ class Solver():
                         self.unify_cons(int(i), int(j), int(x))
             old_cons_num = len(self.cons)
         self.delete_repeat_cons()
-    
+
     def is_multiple(self, cons1, cons2):
         if len(cons1) != len(cons2):
             return False
@@ -310,7 +340,7 @@ class Solver():
                 return True
             else:
                 return False
-    
+
     def delete_repeat_cons(self):
         array = []
         for cons1 in self.cons:
@@ -336,7 +366,7 @@ class Solver():
         m = self.unify_cons(i, j, x)
         self.basic_solve()
         return m
-                 
+           
     def find_poss_wrapped(self, i, x):
         if isinstance(x, str):
             x = self.legend.index(x)
@@ -354,7 +384,7 @@ class Solver():
         m = self.assume(i, x)
         self.basic_solve()
         return m
-    
+
     def cons_to_string(self, constraint):
         result = ''
         for i in range(len(constraint) - 1):
@@ -397,16 +427,21 @@ class Solver():
         ['-'] * len(self.carry),
         [(self.legend[i] if self.solved[i] == None else self.solved[i]) if i!= None else '' for i in self.str3]]
 
+
+
+        if not string:
+            return result + tabulate(table)
+        else:
+            return result + "Equation: " + self.get_equation()
+
+    def get_equation(self):
         # Construct the equation string
         def sub_in_values(lst):
             return ''.join([str(self.solved[val]) if val is not None and self.solved[val] is not None else self.legend[val] if val is not None else '' for val in lst])
 
         equation = f"{sub_in_values(self.str1)} + {sub_in_values(self.str2)} = {sub_in_values(self.str3)}"
+        return equation
 
-        if not string:
-            return result + tabulate(table)
-        else:
-            return result + "Equation: " + equation
     
     def is_solved(self):
         if all([i != None for i in self.solved]):
@@ -444,7 +479,7 @@ class Solver_backtrack():
         self.tree.append(Solver.from_crypt(string))
         self.log = []
 
-        self.solved = None
+        self.answer = None
 
     def __getattr__(self, __name: str) -> Any:
         return getattr(self.tree[-1], __name)
@@ -466,7 +501,7 @@ class Solver_backtrack():
             # Push the new state to the stack
             self.tree.append(new_state)
 
-            self.log.append(f'Assumed {new_state.legend[i]} = {x}')
+            
 
             return new_state
         except Exception as e:
@@ -478,20 +513,20 @@ class Solver_backtrack():
             failed_state = self.tree.pop()
             if failed_state.assumptions:
                 last_assumption = failed_state.assumptions[-1]
-                self.log.append(f'Backtracked on assumption {failed_state.legend[last_assumption[0]]} = {last_assumption[1]}')
+                
             return True
         return False
 
     def solve_with_backtracking(self, current_solver=None):
         if current_solver is None:
             current_solver = self.tree[-1]
-        current_solver.find_poss_all()
+        current_solver.find_poss_all(hacks=True)
 
-        if self.solved:
+        if self.answer:
             return True
         if current_solver.is_solved():
             current_solver.show_state()
-            self.solved = current_solver
+            self.answer = current_solver
             return True
         
         possibilities = [(i, p) for i, p in enumerate(current_solver.poss) if len(p) > 1]
@@ -520,40 +555,72 @@ class SolverNL(Solver_backtrack):
             parts = instruction.strip().split()
             command = parts[0]
             args = parts[1:]
+
+            equation = self.tree[-1].get_equation()
             
+            message = []
             # Execute the command
-            if command == 'find_poss':
+            if command == 'find':
                 if len(args) == 2:
                     i = int(args[0])
                     x = args[1]
+                    if x in self.tree[-1].legend:
+                        x = self.tree[-1].legend.index(x)
+                    before_poss = copy.deepcopy(self.tree[-1].poss[x])
                     success = self.find_poss_wrapped(i, x)
+                    if success:
+                        after_poss = self.tree[-1].poss[x]
+                        removed = set(before_poss) - set(after_poss)
+                        if removed:
+                            message.append(f"Reduced possibilities for {self.tree[-1].legend[x]}. Remaining: {after_poss}, Removed: {list(removed)}")
+                        else:
+                            message.append(f"No possibilities were reduced for {self.tree[-1].legend[x]}.")
                 else:
-                    raise ValueError("find_poss requires 2 arguments")
-            elif command == 'unify_cons':
+                    raise ValueError("find requires 2 arguments")
+            elif command == 'unify':
                 if len(args) == 3:
                     i = int(args[0])
                     j = int(args[1])
                     x = args[2]
+                    new_constraint = self.tree[-1].unify_cons(i, j, self.tree[-1].legend.index(x), return_cons=True)
                     success = self.unify_cons_wrapped(i, j, x)
+                    if success:
+                        parsed_constraint = self.tree[-1].cons_to_string(new_constraint)
+                        message.append(f'Unified constraints into: {parsed_constraint}')
                 else:
-                    raise ValueError("unify_cons requires 3 arguments")
-            elif command == 'make_assumption':
+                    raise ValueError("unify requires 3 arguments")
+            elif command == 'assume':
                 if len(args) == 2:
                     i = args[0]
+                    if x in self.tree[-1].legend:
+                        x = self.tree[-1].legend.index(x)
                     x = int(args[1])
                     success = self.make_assumption(i, x)
+                    if success:
+                        message.append(f'Assumed {self.tree[-1].legend[x]} = {i}')
                 else:
-                    raise ValueError("make_assumption requires 2 arguments")
+                    raise ValueError("assume requires 2 arguments")
             elif command == 'backtrack':
+                x = self.tree[-1].assumptions[-1] if self.tree[-1].assumptions else None   
                 success = self.backtrack()
+                if success:
+                    message.append(f'Backtracked on assumption {x[0]} = {x[1]}')
+                if not success:
+                    raise ValueError("Cannot backtrack further")
             else:
                 raise ValueError("Unknown command")
             
             # Log the action and result
             if success:
                 self.log.append(f"Executed: {instruction} - Success")
+                self.log += message
             else:
                 self.log.append(f"Executed: {instruction} - Failed: {self.tree[-1].error}")
+
+            # Log the new equation if it has changed
+            new_equation = self.tree[-1].get_equation()
+            if new_equation != equation:
+                self.log.append(f"New equation: {new_equation}")
 
             return success
 
@@ -565,18 +632,20 @@ class SolverNL(Solver_backtrack):
         for instruction in instructions:
             self.parse_and_execute(instruction)
             self.find_poss_all()
-        if self.is_solved():
-            self.log.append("Problem Solved!")
-        if self.check_for_impossible():
-            self.log.append("The current state with assumptions: " +
+            if self.is_solved():
+                self.log.append("Problem Solved!")
+            if self.check_for_impossible():
+                self.log.append("The current state with assumptions: " +
                             str([(self.legend[x[0]], x[1]) for x in self.assumptions]) +
                             " is impossible. Please backtrack and try again.")
+
                             
     def get_log_and_state(self):
         current_state = self.tree[-1].show_state(string=True)
         return '\n'.join(self.log) + "\n\nCurrent State:\n" + current_state
-    
 
+    
+     
 if __name__ == '__main__':
     s = Solver_backtrack('EYE + TEEN = MONTH')
     s.solve_with_backtracking()
